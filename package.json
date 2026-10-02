@@ -11,6 +11,7 @@
     "prebuild": "node scripts/copy-smartcharts-assets.js"
   },
   "dependencies": {
+    "@deriv-com/smartcharts-champion": "^1.9.13",
     "@deriv-com/translations": "^1.4.7",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -48,9 +49,9 @@
     "lucide-react": "^0.400.0",
     "next": "16.2.11",
     "next-themes": "^0.2.1",
-    "react": "^19.2.8",
+    "react": "^18.3.1",
     "react-day-picker": "^9.0.0",
-    "react-dom": "^19.2.8",
+    "react-dom": "^18.3.1",
     "react-hook-form": "^7.48.0",
     "react-i18next": "^17.0.11",
     "react-resizable-panels": "^2.0.0",
@@ -59,13 +60,12 @@
     "tailwindcss-animate": "^1.0.7",
     "undici": "7.29.0",
     "uuid": "11.1.1",
-    "vaul": "^1.1.1",
-    "@deriv-com/smartcharts-champion": "^1.9.13"
+    "vaul": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react": "^18.3.26",
+    "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.0.1",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.3.0",

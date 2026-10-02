@@ -1,18 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
-import {
-  ChartMode,
-  ChartTitle,
-  DrawTools,
-  Share,
-  setSmartChartsPublicPath,
-  SmartChart,
-  StudyLegend,
-  ToolbarWidget,
-  Views,
-} from '@deriv-com/smartcharts-champion';
+
+// SmartCharts reaches into React internals while its bundle is evaluated. Load
+// it after hydration so Next's client chunk evaluation cannot run that code
+// before the browser React runtime is initialized.
+type SmartChartsModule = typeof import('@deriv-com/smartcharts-champion');
 import type { UseSmartChartsApiReturn } from '@/hooks/use-smartcharts-api';
 import type { SmartChartChartData } from '@/hooks/use-smartchart-chart-data';
 import type { ContractMarker } from '@/lib/chart-markers';
@@ -22,7 +16,6 @@ import { SMART_CHART_DRAWING_TOOL_POSITION } from '@/lib/smartchart-constants';
 // SmartCharts must load its lazy assets from that same prefix.
 const smartChartsPublicPath =
   process.env.NEXT_PUBLIC_BASE_PATH ? `${process.env.NEXT_PUBLIC_BASE_PATH}/` : '/';
-setSmartChartsPublicPath(smartChartsPublicPath);
 
 /** Configuration for a single barrier rendered on the chart. */
 export interface ChartBarrier {
@@ -97,6 +90,19 @@ export function SmartChartWrapper({
 }: SmartChartWrapperProps) {
   const [chartType, setChartType] = useState<string | undefined>('line');
   const [granularity, setGranularity] = useState(defaultGranularity);
+  const [smartCharts, setSmartCharts] = useState<SmartChartsModule | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    import('@deriv-com/smartcharts-champion').then(module => {
+      if (!isMounted) return;
+      module.setSmartChartsPublicPath(smartChartsPublicPath);
+      setSmartCharts(module);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Defer SmartChart mounting until this wrapper is committed to the DOM.
   // React 18 concurrent rendering can yield between a component's constructor
@@ -139,25 +145,31 @@ export function SmartChartWrapper({
 
   const toolbarWidget = useCallback(
     () => (
-      <ToolbarWidget>
-        <ChartMode onChartType={setChartType} onGranularity={setGranularity} />
-        {!isMobile && <StudyLegend />}
-        {!isMobile && <Views onChartType={setChartType} onGranularity={setGranularity} />}
-        <DrawTools />
-        {!isMobile && <Share />}
-      </ToolbarWidget>
+      smartCharts
+        ? createElement(
+            smartCharts.ToolbarWidget,
+            null,
+            createElement(smartCharts.ChartMode, { onChartType: setChartType, onGranularity: setGranularity }),
+            !isMobile && createElement(smartCharts.StudyLegend),
+            !isMobile && createElement(smartCharts.Views, { onChartType: setChartType, onGranularity: setGranularity }),
+            createElement(smartCharts.DrawTools),
+            !isMobile && createElement(smartCharts.Share)
+          )
+        : null
     ),
     [isMobile]
   );
 
   const topWidgets = useCallback(
-    () => <ChartTitle onChange={onSymbolChange} />,
-    [onSymbolChange]
+    () => (smartCharts ? createElement(smartCharts.ChartTitle, { onChange: onSymbolChange }) : null),
+    [onSymbolChange, smartCharts]
   );
+
+  const SmartChartComponent = smartCharts?.SmartChart;
 
   return (
     <div className="relative h-full min-h-0 w-full overflow-clip rounded-md border border-border/50 dark:border-white/[0.08] bg-muted/30">
-      {isReadyToMount && <SmartChart
+      {isReadyToMount && SmartChartComponent && <SmartChartComponent
         key={symbolKey}
         chartControlsWidgets={null}
         chartData={chartData}
